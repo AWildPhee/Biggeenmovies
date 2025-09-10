@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Big Geen Movies</title>
+<style>
+  :root{--bg:#0b0b12;--text:#f3f6ff;--muted:#b9c1e4;--accent:#18e718;--card:#121426}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0b0b12;color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif}
+  .nav{position:sticky;top:0;z-index:10;display:flex;align-items:center;padding:14px 22px;background:linear-gradient(180deg,rgba(0,0,0,.6),rgba(0,0,0,0))}
+  .logo{font-weight:900;font-size:20px;text-decoration:none;color:#fff}
+  .logo .green{color:var(--accent)}
+
+  .hero{position:relative;height:min(60vh,520px);display:flex;align-items:flex-end;
+    background:url("https://arts.columbia.edu/sites/default/files/styles/cu_crop/public/content/Images/News/film_feature_minecraft%20movie%20poster.jpg?itok=C9NU72jQ") center/cover no-repeat}
+  .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.35) 0%,rgba(0,0,0,.7) 70%,rgba(0,0,0,.9) 100%)}
+  .hero-text{position:relative;padding:24px 22px 28px;max-width:1000px}
+  .hero-title{font-size:clamp(24px,6vw,40px);margin:0 0 8px}
+  .hero-sub{color:var(--muted)}
+  .btn{background:#fff;color:#000;border:none;padding:10px 14px;border-radius:8px;font-weight:700;cursor:pointer;margin-top:14px}
+
+  .row{padding:18px 0}
+  .row h3{margin:0 22px 10px;font-size:18px;font-weight:800}
+  .strip{display:flex;gap:12px;overflow:auto;padding:0 22px 8px;scrollbar-width:none}
+  .strip::-webkit-scrollbar{display:none}
+
+  .card{flex:0 0 auto;width:180px;border-radius:10px;overflow:hidden;background:var(--card);
+    border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 24px rgba(0,0,0,.35);
+    transform-origin:center;transition:transform .15s ease, box-shadow .15s ease}
+  .card:hover{transform:scale(1.07);box-shadow:0 16px 36px rgba(0,0,0,.55);cursor:pointer}
+  .thumb{width:100%;aspect-ratio:2/3;object-fit:cover;object-position:center;background:#0c0e19;display:block}
+  .caption{padding:8px 10px;font-size:13px;color:var(--muted)}
+  .bar{position:absolute;left:0;right:0;bottom:0;height:4px;background:rgba(255,255,255,.15)}
+  .fill{height:100%;background:var(--accent);width:0%}
+  .pill{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);padding:4px 6px;border-radius:6px;font-size:12px}
+  .pill.heart{background:rgba(24,231,24,.2);border:1px solid rgba(24,231,24,.45);color:#b6ffb6}
+  .empty{color:var(--muted);margin:0 22px}
+  @media (max-width:640px){ .card{width:150px} }
+</style>
+</head>
+<body>
+  <div class="nav">
+    <a href="file:///C:/Users/harri/Downloads/GeenSmoothieMovies/Home.html" class="logo">Big <span class="green">Geen</span> Movies</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="shade"></div>
+    <div class="hero-text">
+      <h1 class="hero-title">Minecraft</h1>
+      <p class="hero-sub">Click play to open the Minecraft page.</p>
+      <button class="btn" onclick="openMovie('minecraft-2025')">▶ Play</button>
+    </div>
+  </section>
+
+  <!-- FAVORITED -->
+  <section class="row">
+    <h3>Favorited:</h3>
+    <div class="strip" id="favStrip"></div>
+    <p class="empty" id="favEmpty" style="display:none">No favorites yet — tap “Favorite” on a movie page.</p>
+  </section>
+
+  <!-- CONTINUE WATCHING -->
+  <section class="row">
+    <h3>Continue watching:</h3>
+    <div class="strip" id="contStrip"></div>
+    <p class="empty" id="contEmpty" style="display:none">Nothing here yet — start a movie and we’ll save your place.</p>
+  </section>
+
+  <!-- MOVIES -->
+  <section class="row">
+    <h3>Movies:</h3>
+    <div class="strip" id="moviesStrip"></div>
+  </section>
+
+<script>
+/* ========== Catalog ========== */
+const CATALOG = [
+  {
+    id: "dogman-2023",
+    title: "Dogman",
+    poster: "https://www.dreamworks.com/storage/cms-uploads/dog-man-share-image.jpg",
+    playUrl: "file:///C:/Users/harri/Downloads/GeenSmoothieMovies/Movies/Dogman.html"
+  },
+  {
+    id: "minecraft-2025",
+    title: "Minecraft",
+    poster: "https://arts.columbia.edu/sites/default/files/styles/cu_crop/public/content/Images/News/film_feature_minecraft%20movie%20poster.jpg?itok=C9NU72jQ",
+    playUrl: "file:///C:/Users/harri/Downloads/GeenSmoothieMovies/Movies/Minecraft.html"
+  }
+];
+
+/* ========== LocalStorage keys ========== */
+const FAV_KEY = "biggeen_favorites_v1";
+const PROG_KEY = "biggeen_progress_v1"; // { [id]: {pos,dur,updatedAt} }
+
+/* ========== Helpers ========== */
+const getFavs = () => { try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch { return []; } };
+const isFav   = (id) => getFavs().includes(id);
+
+const loadProg = () => { try { return JSON.parse(localStorage.getItem(PROG_KEY)) || {}; } catch { return {}; } };
+const getEntry = (id) => loadProg()[id] || null;
+const percent  = (e) => (!e||!e.dur)?0:Math.min(100,Math.round((e.pos/e.dur)*100));
+const isFinished = (e) => e && e.dur && e.pos/e.dur >= 0.98;
+
+const FALLBACK_SVG = encodeURIComponent(`
+  <svg xmlns="http://www.w3.org/2000/svg" width="600" height="900">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0e4620"/><stop offset="1" stop-color="#17a34a"/>
+    </linearGradient></defs>
+    <rect width="600" height="900" fill="url(#g)"/>
+    <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle"
+          fill="white" font-family="Arial" font-size="48" font-weight="700">No Image</text>
+  </svg>
+`);
+
+/* ========== UI builders ========== */
+function movieCard(movie, opts={}){
+  const {showHeart=false, entry=null, resume=false} = opts;
+  const p = percent(entry);
+  const el = document.createElement('article');
+  el.className = 'card';
+
+  const img = document.createElement('img');
+  img.className = 'thumb';
+  img.alt = movie.title;
+  img.src = movie.poster;
+  img.onerror = () => {
+    img.src = `data:image/svg+xml;charset=UTF-8,${FALLBACK_SVG}`;
+  };
+
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+  const fill = document.createElement('div');
+  fill.className = 'fill';
+  fill.style.width = `${p}%`;
+  bar.appendChild(fill);
+
+  const top = document.createElement('div');
+  top.style.position = 'relative';
+  if (showHeart){
+    const heart = document.createElement('span');
+    heart.className = 'pill heart';
+    heart.textContent = '❤ Favorited';
+    top.appendChild(heart);
+  }
+  if (resume){
+    const pill = document.createElement('span');
+    pill.className = 'pill';
+    pill.textContent = `Resume ${p}%`;
+    top.appendChild(pill);
+  }
+  top.appendChild(img);
+  top.appendChild(bar);
+
+  const cap = document.createElement('div');
+  cap.className = 'caption';
+  cap.textContent = movie.title;
+
+  el.appendChild(top);
+  el.appendChild(cap);
+  el.onclick = () => openMovie(movie.id);
+  return el;
+}
+
+/* ========== Render rows ========== */
+function render(){
+  // Movies row
+  const moviesStrip = document.getElementById('moviesStrip');
+  moviesStrip.innerHTML = "";
+  CATALOG.forEach(m => moviesStrip.appendChild(movieCard(m, {showHeart:isFav(m.id), entry:getEntry(m.id)})));
+
+  // Favorited
+  const favStrip = document.getElementById('favStrip');
+  const favEmpty = document.getElementById('favEmpty');
+  favStrip.innerHTML = "";
+  const favIds = new Set(getFavs());
+  const favs = CATALOG.filter(m => favIds.has(m.id))
+    .map(m => ({movie:m, entry:getEntry(m.id)}))
+    .sort((a,b)=> (b.entry?.updatedAt||0) - (a.entry?.updatedAt||0));
+  favEmpty.style.display = favs.length ? "none" : "block";
+  favs.forEach(x => favStrip.appendChild(movieCard(x.movie, {showHeart:true, entry:x.entry})));
+
+  // Continue watching (⏱ exclude finished ones)
+  const contStrip = document.getElementById('contStrip');
+  const contEmpty = document.getElementById('contEmpty');
+  contStrip.innerHTML = "";
+  const started = CATALOG
+    .map(m => ({movie:m, entry:getEntry(m.id)}))
+    .filter(x => x.entry && !isFinished(x.entry))  // <98% only
+    .sort((a,b)=> (b.entry.updatedAt||0) - (a.entry.updatedAt||0));
+  contEmpty.style.display = started.length ? "none" : "block";
+  started.forEach(x => contStrip.appendChild(movieCard(x.movie, {resume:true, entry:x.entry})));
+}
+
+/* ========== Navigation ========== */
+function openMovie(id){
+  const m = CATALOG.find(x=>x.id===id);
+  if(m) window.location.href = m.playUrl;
+}
+
+/* Re-render if other tabs update storage */
+window.addEventListener('storage', (e)=>{
+  if(e.key === FAV_KEY || e.key === PROG_KEY) render();
+});
+
+/* Initial paint */
+render();
+</script>
+</body>
+</html>
