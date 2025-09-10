@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Minecraft – Big Geen Movies</title>
+<style>
+  :root{
+    --accent:#4ef58a; --accent-2:#2ec46a;
+    --bg:#0b0b12; --text:#f0fff5; --muted:#a8e2c0;
+    --glass:rgba(255,255,255,.1); --glass-2:rgba(255,255,255,.2);
+    --shadow:0 12px 30px rgba(0,0,0,.45); --shadow-lg:0 20px 50px rgba(0,0,0,.65);
+    --radius:14px; --ease:cubic-bezier(.2,.7,.2,1);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
+  a{text-decoration:none;color:inherit}
+
+  /* Top bar */
+  .nav{padding:14px 20px;position:absolute;top:0;left:0;right:0;z-index:10;display:flex;align-items:center}
+  .logo{color:#fff;font-weight:900;font-size:20px;text-decoration:none;letter-spacing:.2px;filter:drop-shadow(0 2px 10px rgba(0,0,0,.35))}
+  .logo .green{color:var(--accent)}
+
+  /* Hero (same layout as Dogman page) */
+  .hero{
+    position:relative;height:80vh;display:flex;align-items:flex-end;justify-content:flex-start;
+    background:url("https://arts.columbia.edu/sites/default/files/styles/cu_crop/public/content/Images/News/film_feature_minecraft%20movie%20poster.jpg?itok=C9NU72jQ") center/cover no-repeat;
+  }
+  .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.88) 85%)}
+  .hero-content{position:relative;padding:26px 22px 28px;max-width:860px;animation:fadeUp .5s var(--ease) both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .title{margin:0 0 10px;font-size:clamp(28px,6vw,46px);font-weight:900;letter-spacing:.2px}
+  .meta{display:flex;gap:14px;align-items:center;color:var(--muted);font-size:14px;margin-bottom:10px}
+  .tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .tag{background:var(--accent-2);color:#fff;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;box-shadow:var(--shadow)}
+  .desc{color:var(--muted);font-size:15px;line-height:1.55;max-width:760px;margin-bottom:18px;text-wrap:pretty}
+
+  /* Buttons with “pop” */
+  .buttons{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{
+    border:none;border-radius:12px;padding:12px 18px;font-weight:800;font-size:15px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:8px;text-decoration:none;transform:translateZ(0);
+    transition:transform .12s var(--ease), box-shadow .2s var(--ease), background .18s var(--ease), color .18s var(--ease);
+    box-shadow:var(--shadow);
+  }
+  .btn:active{transform:scale(.98)}
+  .btn.play{background:var(--accent);color:#0c2114}
+  .btn.play:hover{background:var(--accent-2);color:#fff;box-shadow:var(--shadow-lg)}
+  .btn.alt{background:var(--glass);color:#fff;border:1px solid rgba(255,255,255,.12)}
+  .btn.alt:hover{background:var(--glass-2);box-shadow:var(--shadow-lg)}
+  .btn.fav.active{background:rgba(24,231,24,.25);border-color:rgba(24,231,24,.45)}
+
+  /* Player overlay */
+  .player{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.92);z-index:99;padding:24px}
+  .player.show{display:flex;animation:fadeIn .2s var(--ease)}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .frame{position:relative}
+  video{width:min(92vw,1200px);max-height:86vh;border-radius:var(--radius);background:#000;box-shadow:var(--shadow-lg)}
+  .close{
+    position:absolute;top:-12px;right:-12px;width:42px;height:42px;border:none;border-radius:999px;background:var(--accent);
+    font-weight:900;font-size:20px;color:#05180d;cursor:pointer;box-shadow:var(--shadow);
+    transition:transform .12s var(--ease), box-shadow .2s var(--ease);
+  }
+  .close:hover{transform:scale(1.06);box-shadow:var(--shadow-lg)}
+</style>
+</head>
+<body>
+  <div class="nav">
+    <a href="file:///C:/Users/harri/Downloads/GeenSmoothieMovies/Home.html" class="logo">Big <span class="green">Geen</span> Movies</a>
+  </div>
+
+  <section class="hero">
+    <div class="shade"></div>
+    <div class="hero-content">
+      <h1 class="title">Minecraft</h1>
+      <div class="meta"><span>2025</span><span>⏱ 1h 41m</span><span>⭐ 6</span></div>
+      <div class="tags"><div class="tag">Family</div><div class="tag">Fantasy</div><div class="tag">Comedy</div></div>
+      <p class="desc">Click Play to watch. We’ll remember your place so it shows on Home under “Continue watching”.</p>
+      <div class="buttons">
+        <button class="btn play" id="playBtn">▶ Play</button>
+        <button class="btn alt fav" id="favBtn">❤ Favorite</button>
+        <a class="btn alt" id="downloadBtn" href="#" download="Minecraft (2025).mp4">⬇ Download</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="player" id="player">
+    <div class="frame">
+      <button class="close" id="closeBtn" title="Close">×</button>
+      <video id="playerVideo" controls playsinline></video>
+    </div>
+  </div>
+
+<script>
+  /* IDs & Links */
+  const MOVIE_ID = "minecraft-2025";
+  const MOVIE_SRC =
+    "https://main.speedcooler.workers.dev/download/TzJIVG4rNHVJdVF2cVJUcDFkbmNqQT09OlhUNVNIbEVBZkdYS3JTTUFoaVVzWVN0NXlWY0xFbkNFeG5vUGVPNm0xcXpWcVdIeUZpMGpyUlhmWTBzdGNjQkYzZGovY2k5b1JpbUJCM1BJYTRrc0N0OEw5UFBFMWdYNTBJaGZ4UHo0eGJHbjVBcmp6d09sWHhkV0ZxQUtoRE9KN3hXWStyWFN6dm8yZmpmcDI5Q05Ud1p3TTJMSkxqTkRMMnFuNmYzTU83NWtmRG40QnZYN2t2UlpMU3VYYXJWSjA5V2pNUDUxQWx2ejlMWWNpRXQwVUFraFhkQ3o3eUpjbEUzcDhGcWp1bzI1c3pvL0hZUDZZV2lUaDc0R09sZlAwVGJ0aVM5S0JHTmlRcDF5OXNMM3dDSzBKZ2JKS2s5Z254azN6UmxlWXNzPQ==?filename=QSBNaW5lY3JhZnQgTW92aWUgLSBbMjAyNV0ubXA0";
+
+  /* Elements */
+  const playBtn = document.getElementById('playBtn');
+  const favBtn  = document.getElementById('favBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const player  = document.getElementById('player');
+  const video   = document.getElementById('playerVideo');
+  const closeBtn= document.getElementById('closeBtn');
+
+  /* Favorites */
+  const FAV_KEY = "biggeen_favorites_v1";
+  const getFavs = () => { try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch { return []; } };
+  const setFavs = (arr) => localStorage.setItem(FAV_KEY, JSON.stringify(arr));
+  const isFav   = (id) => getFavs().includes(id);
+  const toggleFav = (id) => { const s=new Set(getFavs()); s.has(id)?s.delete(id):s.add(id); setFavs([...s]); updateFavUI(); };
+  const updateFavUI = () => { const f=isFav(MOVIE_ID); favBtn.classList.toggle('active', f); favBtn.textContent = f ? '❤ Unfavorite' : '❤ Favorite'; };
+  favBtn.addEventListener('click', () => toggleFav(MOVIE_ID));
+
+  /* Progress (Continue Watching) */
+  const PROG_KEY = "biggeen_progress_v1"; // { [id]: {pos,dur,updatedAt} }
+  const loadProg = () => { try { return JSON.parse(localStorage.getItem(PROG_KEY)) || {}; } catch { return {}; } };
+  const saveProg = (m) => localStorage.setItem(PROG_KEY, JSON.stringify(m));
+  const getEntry = (id) => loadProg()[id] || null;
+  const setEntry = (id,pos,dur) => { const m = loadProg(); m[id] = {pos, dur, updatedAt: Date.now()}; saveProg(m); };
+
+  /* Play / Close */
+  playBtn.addEventListener('click', () => {
+    if (video.src !== MOVIE_SRC) video.src = MOVIE_SRC;
+    player.classList.add('show');
+
+    const e = getEntry(MOVIE_ID);
+    const startAt = e && e.pos && e.dur && e.pos < e.dur - 1 ? e.pos : 0;
+    const go = () => { try { if (startAt) video.currentTime = startAt; } catch {} video.play().catch(()=>{}); };
+    if (video.readyState >= 1) go(); else video.addEventListener('loadedmetadata', go, {once:true});
+  });
+
+  closeBtn.addEventListener('click', () => { video.pause(); player.classList.remove('show'); });
+
+  // Save progress while viewing
+  const tick = () => { if(!video.duration || isNaN(video.duration)) return; setEntry(MOVIE_ID, video.currentTime, video.duration); };
+  video.addEventListener('timeupdate', () => { if(!video.paused) tick(); });
+  video.addEventListener('pause', tick);
+  video.addEventListener('ended', tick);
+  window.addEventListener('beforeunload', tick);
+
+  /* Download */
+  downloadBtn.href = MOVIE_SRC;
+  downloadBtn.setAttribute('download', 'Minecraft (2025).mp4');
+
+  /* Init */
+  updateFavUI();
+</script>
+</body>
+</html>

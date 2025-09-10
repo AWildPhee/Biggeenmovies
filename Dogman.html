@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Dogman - Big Geen Movies</title>
+<style>
+  :root{--accent:#4ef58a; --accent-dark:#2ec46a; --bg:#0b0b12; --text:#f0fff5; --muted:#a8e2c0;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Arial,sans-serif}
+  .nav{padding:14px;background:rgba(0,0,0,.6);position:absolute;top:0;width:100%;z-index:10}
+  .logo{font-weight:900;font-size:20px;color:#fff}.logo .green{color:var(--accent)}
+
+  .hero{position:relative;height:80vh;background:url("https://www.dreamworks.com/storage/cms-uploads/dog-man-share-image.jpg") center/cover no-repeat;display:flex;align-items:flex-end}
+  .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,.85) 90%)}
+  .hero-content{position:relative;padding:24px;max-width:800px}
+  .title{font-size:clamp(28px,6vw,46px);margin:0 0 10px;font-weight:900}
+  .meta{display:flex;gap:14px;font-size:14px;color:var(--muted);margin-bottom:10px}
+  .tags{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .tag{background:var(--accent-dark);color:#fff;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  .desc{color:var(--muted);font-size:15px;line-height:1.5;max-width:700px;margin-bottom:18px}
+  .buttons{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{border:none;padding:10px 16px;font-size:15px;font-weight:700;border-radius:12px;cursor:pointer;transition:all .2s;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+  .btn.play{background:var(--accent);color:#000}.btn.play:hover{background:var(--accent-dark);color:#fff}
+  .btn.alt{background:rgba(255,255,255,.1);color:#fff}.btn.alt:hover{background:rgba(255,255,255,.2)}
+  .btn.fav.active{background:rgba(24,231,24,.25);border:1px solid rgba(24,231,24,.45)}
+  .player{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.9);z-index:999;padding:24px}
+  .player.show{display:flex}
+  .player video{width:min(92vw,1200px);max-height:86vh;border-radius:14px;background:#000;box-shadow:0 12px 30px rgba(0,0,0,.8)}
+  .close{position:absolute;top:16px;right:16px;background:var(--accent);border:none;border-radius:999px;width:40px;height:40px;cursor:pointer;font-size:20px;font-weight:900;color:#000}
+</style>
+</head>
+<body>
+  <div class="nav">
+    <a href="file:///C:/Users/harri/Downloads/GeenSmoothieMovies/Home.html" class="logo">Big <span class="green">Geen</span> Movies</a>
+  </div>
+
+  <section class="hero">
+    <div class="shade"></div>
+    <div class="hero-content">
+      <h1 class="title">Dogman</h1>
+      <div class="meta"><span>2025</span><span>⏱ 1h 50m</span><span>⭐ 6.5</span></div>
+      <div class="tags"><div class="tag">Crime</div><div class="tag">Drama</div></div>
+      <p class="desc">Click Play to watch. We’ll remember your place so it shows up under “Continue watching.”</p>
+      <div class="buttons">
+        <button class="btn play" id="playBtn">▶ Play</button>
+        <button class="btn alt fav" id="favBtn" type="button">❤ Favorite</button>
+        <a class="btn alt" id="downloadBtn" href="#" download="Dogman (2025).mp4">⬇ Download</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="player" id="player">
+    <button class="close" id="closeBtn" title="Close">×</button>
+    <video id="playerVideo" controls playsinline></video>
+  </div>
+
+<script>
+  const MOVIE_ID = "dogman-2023";
+  const MOVIE_SRC =
+    "https://main.speedcooler.workers.dev/download/Y25aak9CakdYRnZZUXNjYk5iL0JIdz09Om0yVy9zd2NrTFg3dFMrNExST0hOOGRQN3p0WWpPV0NWUlhNUWdUbURkaHRMTEZDQjhmaGtjZTBSNjIwWktQRXEybEY4UXhNZlBoQ3FVcHAxMnBrOTRrcHFkN2R0MDlpUXlGMm1zSmR6b1A1K3M5MGNkcHNuLzIxN1VQSmljc1RiR3ZSbDdJTkhIMlAyK0VYUlRxMmFiWi9kTGZTNkxEY0ZqQnJ1K0pUYkxockY5Zmo1TG5GeVNIcGlJRFR1Q2QweGNadVEyaU5nd3R2VmpOTDg4UHJGam9BN1ZKZ0RzUzlMSXFxNHpxSldXZHNPSXc5TkIwK1hYaUNBamZKdlJ1YWpoU0JmNmUwclg4QWlJUWtWVnJmZ2F3MzdrdU05WS9zeTdQdWtIdWNtd0ljPQ==?filename=RG9nIE1hbiAtIFsyMDI1XS5tcDQ=";
+
+  const playBtn   = document.getElementById('playBtn');
+  const favBtn    = document.getElementById('favBtn');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const player    = document.getElementById('player');
+  const video     = document.getElementById('playerVideo');
+  const closeBtn  = document.getElementById('closeBtn');
+
+  /* === Favorites === */
+  const FAV_KEY = "biggeen_favorites_v1";
+  function getFavs(){ try { return JSON.parse(localStorage.getItem(FAV_KEY)) || []; } catch { return []; } }
+  function setFavs(arr){ localStorage.setItem(FAV_KEY, JSON.stringify(arr)); }
+  function isFav(id){ return getFavs().includes(id); }
+  function toggleFav(id){
+    const set = new Set(getFavs());
+    set.has(id) ? set.delete(id) : set.add(id);
+    setFavs([...set]);
+    updateFavUI();
+  }
+  function updateFavUI(){
+    const fav = isFav(MOVIE_ID);
+    favBtn.classList.toggle("active", fav);
+    favBtn.textContent = fav ? "❤ Unfavorite" : "❤ Favorite";
+    favBtn.setAttribute("aria-pressed", fav ? "true" : "false");
+  }
+  favBtn.onclick = (e)=>{ e.preventDefault(); toggleFav(MOVIE_ID); };
+
+  /* === Progress === */
+  const PROG_KEY = "biggeen_progress_v1";
+  function loadProg(){ try { return JSON.parse(localStorage.getItem(PROG_KEY)) || {}; } catch { return {}; } }
+  function saveProg(m){ localStorage.setItem(PROG_KEY, JSON.stringify(m)); }
+  function getEntry(id){ return loadProg()[id] || null; }
+  function setEntry(id,pos,dur){ const m=loadProg(); m[id]={pos,dur,updatedAt:Date.now()}; saveProg(m); }
+
+  /* === Play / Close === */
+  playBtn.addEventListener('click', () => {
+    if (video.src !== MOVIE_SRC) video.src = MOVIE_SRC;
+    player.classList.add('show');
+
+    const e = getEntry(MOVIE_ID);
+    const startAt = e && e.pos && e.dur && e.pos < e.dur - 1 ? e.pos : 0;
+    const go = () => { try { if (startAt) video.currentTime = startAt; } catch {} video.play().catch(()=>{}); };
+    if (video.readyState >= 1) go(); else video.addEventListener('loadedmetadata', go, {once:true});
+  });
+
+  closeBtn.addEventListener('click', () => { video.pause(); player.classList.remove('show'); });
+
+  // Save progress
+  const saveTick = () => { if (!video.duration || isNaN(video.duration)) return; setEntry(MOVIE_ID, video.currentTime, video.duration); };
+  video.addEventListener('timeupdate', () => { if(!video.paused) saveTick(); });
+  video.addEventListener('pause', saveTick);
+  video.addEventListener('ended', saveTick);
+  window.addEventListener('beforeunload', saveTick);
+
+  /* === Download === */
+  downloadBtn.href = MOVIE_SRC;
+  downloadBtn.setAttribute('download', 'Dogman (2025).mp4');
+
+  /* === Init === */
+  updateFavUI();
+</script>
+</body>
+</html>
